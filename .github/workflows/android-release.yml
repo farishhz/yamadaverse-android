@@ -1,0 +1,121 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      versi:
+        description: "Versi semver tanpa prefix v, contoh 1.0.2"
+        required: false
+        type: string
+      tag:
+        description: "Tag rilis langsung, contoh v1.0.2 (prioritas tertinggi)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Tentukan tag rilis
+        id: tag
+        run: |
+          TAG_INPUT="${{ inputs.tag }}"
+          VERSI_INPUT="${{ inputs.versi }}"
+
+          if [ -n "${TAG_INPUT}" ]; then
+            TAG_RILIS="${TAG_INPUT}"
+          elif [ -n "${VERSI_INPUT}" ]; then
+            TAG_RILIS="v${VERSI_INPUT}"
+          else
+            echo "Input kosong. Isi salah satu: tag atau versi."
+            exit 1
+          fi
+
+          if [[ ! "${TAG_RILIS}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Format tag tidak valid: ${TAG_RILIS}. Gunakan format vMAJOR.MINOR.PATCH"
+            exit 1
+          fi
+
+          echo "tag_rilis=${TAG_RILIS}" >> "$GITHUB_OUTPUT"
+
+      - name: Buat tag jika belum ada
+        run: |
+          TAG_RILIS="${{ steps.tag.outputs.tag_rilis }}"
+          git fetch --tags --force
+          if git rev-parse "${TAG_RILIS}" >/dev/null 2>&1; then
+            echo "Tag ${TAG_RILIS} sudah ada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${TAG_RILIS}"
+          git push origin "${TAG_RILIS}"
+
+      - name: Pasang key signing Android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "${ANDROID_KEYSTORE_BASE64}" ] && [ -n "${ANDROID_KEY_ALIAS}" ] && [ -n "${ANDROID_KEYSTORE_PASSWORD}" ] && [ -n "${ANDROID_KEY_PASSWORD}" ]; then
+            echo "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > android/upload-keystore.jks
+            {
+              printf 'storePassword=%s\n' "${ANDROID_KEYSTORE_PASSWORD}"
+              printf 'keyPassword=%s\n' "${ANDROID_KEY_PASSWORD}"
+              printf 'keyAlias=%s\n' "${ANDROID_KEY_ALIAS}"
+              printf 'storeFile=%s\n' "upload-keystore.jks"
+            } > android/key.properties
+            echo "Signing key release aktif."
+          else
+            echo "Secrets signing belum lengkap, build akan fallback ke debug signing."
+          fi
+
+      - name: Ambil dependencies
+        run: flutter pub get
+
+      - name: Build APK release
+        run: |
+          flutter build apk --release \
+            --dart-define=REPO_PEMILIK=${{ github.repository_owner }} \
+            --dart-define=REPO_NAMA=${{ github.event.repository.name }}
+
+      - name: Buat checksum
+        run: |
+          cd build/app/outputs/flutter-apk
+          sha256sum app-release.apk > app-release.apk.sha256
+
+      - name: Upload artifact workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ steps.tag.outputs.tag_rilis }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha256
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag_rilis }}
+          generate_release_notes: true
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha256

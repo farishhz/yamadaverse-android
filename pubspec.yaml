@@ -1,0 +1,33 @@
+name: yamada_app
+description: YamadaVerse mobile wrapper app (WebView)
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.2
+  webview_flutter: ^4.8.0
+  webview_flutter_android: ^4.10.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/logo.png
+  adaptive_icon_background: "#0A111B"
+  adaptive_icon_foreground: assets/logo.png
+  min_sdk_android: 21

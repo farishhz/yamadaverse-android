@@ -1,0 +1,22 @@
+# Flutter
+.dart_tool/
+.packages
+.pub/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Misc
+.DS_Store
+
+# Android signing
+android/key.properties
+android/*.jks
+android/*.keystore
+
+# APK Installer (hosted on GitHub Releases)
+app-release.apk
+
