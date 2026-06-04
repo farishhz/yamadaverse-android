@@ -8,7 +8,7 @@ Aplikasi Android resmi YamadaVerse berbasis Flutter dengan tampilan WebView full
 
 Silakan unduh file APK versi terbaru dengan menekan tombol di bawah ini:
 
-<a href="https://github.com/USERNAME/REPO_NAME/releases/latest/download/app-release.apk">
+<a href="https://github.com/farishhz/yamadaverse-android/releases/download/v1.0.0/yamadaverse-app-release.apk">
   <img src="https://img.shields.io/badge/Download-APK%20(Latest)-0A111B?style=for-the-badge&logo=android&logoColor=3DDC84" alt="Download APK" />
 </a>
 
