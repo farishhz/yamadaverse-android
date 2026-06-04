@@ -13,7 +13,7 @@ Silakan unduh file APK versi terbaru dengan menekan tombol di bawah ini:
 </a>
 
 > [!IMPORTANT]
-> Jangan lupa untuk mengganti **`USERNAME`** dan **`REPO_NAME`** pada tautan tombol di atas dengan username GitHub dan nama repository Anda setelah Anda membuat release di GitHub.
+> punya payis!
 
 ---
 
